@@ -1,4 +1,3 @@
-# parsing/web_parser.py
 import time
 import pandas as pd
 from selenium import webdriver
@@ -20,15 +19,12 @@ class GitHubParser:
     def setup_driver(self):
         """Настройка Google Chrome"""
         chrome_options = Options()
-        # --headless означает, что браузер запустится без окна (фоновый режим)
-        # Если хотите видеть браузер, закомментируйте строку ниже
         chrome_options.add_argument("--headless") 
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920,1080")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         
-        # Маскируемся под обычного пользователя
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
 
         print("Запуск браузера Chrome...")
@@ -43,39 +39,30 @@ class GitHubParser:
         try:
             self.driver.get(self.base_url)
             
-            # Ждем, пока загрузится список репозиториев (блок article)
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "article"))
             )
             
-            # Получаем HTML страницы и парсим через BeautifulSoup (это быстрее и надежнее)
             page_source = self.driver.page_source
             soup = BeautifulSoup(page_source, 'html.parser')
             
-            # Находим все блоки с репозиториями
             repo_list = soup.find_all('article', class_='Box-row')
             print(f"Найдено репозиториев на странице: {len(repo_list)}")
 
             for repo in repo_list:
                 try:
-                    # 1. Название и ссылка
                     h2_tag = repo.find('h2')
                     link_tag = h2_tag.find('a')
                     relative_link = link_tag['href'] # /author/repo
                     full_link = f"https://github.com{relative_link}"
-                    # Удаляем лишние пробелы и переносы строк
                     name = link_tag.text.strip().replace('\n', '').replace(' ', '')
                     
-                    # 2. Описание (может не быть)
                     desc_tag = repo.find('p', class_='col-9')
                     description = desc_tag.text.strip() if desc_tag else "Нет описания"
                     
-                    # 3. Язык программирования (может не быть)
                     lang_tag = repo.find('span', itemprop='programmingLanguage')
                     language = lang_tag.text.strip() if lang_tag else "Unknown"
                     
-                    # 4. Звезды (Всего)
-                    # Ищем ссылку, которая ведет на /stargazers
                     stars_tag = repo.find('a', href=f"{relative_link}/stargazers")
                     stars = stars_tag.text.strip() if stars_tag else "0"
 

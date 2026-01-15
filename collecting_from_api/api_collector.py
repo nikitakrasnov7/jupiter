@@ -1,4 +1,3 @@
-# collecting_from_api/api_collector.py
 import requests
 import pandas as pd
 import time
@@ -7,7 +6,6 @@ import os
 import sys
 import json
 
-# Добавляем путь к корню проекта
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.config import API_CONFIG
@@ -30,7 +28,6 @@ class APIDataCollector:
     def make_request(self, endpoint: str, params: Dict = None) -> Dict:
         url = f"{self.get_base_url()}{endpoint}"
         params = params or {}
-        # У GNews параметр ключа называется 'apikey'
         params['apikey'] = self.get_api_key()
         
         print(f"  [DEBUG] Запрос: {url} | Params: {params.keys()}") # Не показываем сам ключ
@@ -63,7 +60,6 @@ class APIDataCollector:
 
 class NewsDataCollector(APIDataCollector):
     def __init__(self):
-        # Используем конфиг 'gnews'
         super().__init__('gnews')
 
     def collect_news_by_topics(self, topics: List[str]) -> List[Dict]:
@@ -77,14 +73,13 @@ class NewsDataCollector(APIDataCollector):
             
             params = {
                 'q': topic,
-                'lang': 'en',        # Ищем на английском
-                'max': 5,            # Максимум 5 статей (у GNews лимит 100 всего)
+                'lang': 'en',        
+                'max': 5,            
                 'sortby': 'publishedAt'
             }
             
             data = self.make_request(endpoint, params)
             
-            # У GNews список статей лежит в 'articles'
             if 'articles' in data:
                 articles = data['articles']
                 parsed_articles = [self._parse_article(a, topic) for a in articles]
@@ -93,13 +88,11 @@ class NewsDataCollector(APIDataCollector):
             else:
                 print(f"  -> Странный ответ (нет ключа 'articles'): {data}")
             
-            # Небольшая пауза (у GNews ограничение 1 запрос в секунду для free)
             time.sleep(1.1)
 
         return all_news
     
     def _parse_article(self, article: Dict, topic: str) -> Dict:
-        # Парсим формат GNews
         source_data = article.get('source', {})
         return {
             'topic': topic,
